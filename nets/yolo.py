@@ -11,6 +11,8 @@ from .mobilenet_v2 import mobilenet_v2
 from .mobilenet_v3 import mobilenet_v3
 from .resnet import resnet50
 from .vgg import vgg
+from .shufflenet import shufflenet2
+from .shufflenetv2 import shufflenet_v2_x1_0
 
 
 class MobileNetV1(nn.Module):
@@ -84,6 +86,23 @@ class VGG(nn.Module):
         feat4 = self.model.features[17:24](feat3)
         feat5 = self.model.features[24:  ](feat4)
         return [feat3, feat4, feat5]
+
+class ShufflenetV2(nn.Module):
+    def __init__(self, pretrained = False):
+        super(ShufflenetV2, self).__init__()
+        # self.model = shufflenet2(pretrained=pretrained)
+        self.model = shufflenet_v2_x1_0(pretrained=pretrained)
+    def forward(self, x):
+        # out3, out4, out5 = self.model(x)
+        
+        # return out3, out4, out5
+        x = self.model.conv1(x)
+        x = self.model.maxpool(x)
+        out3 = self.model.stage2(x)
+        out4 = self.model.stage3(out3)
+        out5 = self.model.stage4(out4)
+        out5 = self.model.conv5(out5)
+        return out3, out4, out5
 
 class Densenet(nn.Module):
     def __init__(self, backbone, pretrained=False):
@@ -249,6 +268,14 @@ class YoloBody(nn.Module):
             #---------------------------------------------------#
             self.backbone   = GhostNet(pretrained=pretrained)
             in_filters      = [40, 112, 160]
+        elif backbone =="shufflenetv2":
+            #---------------------------------------------------#   
+            #   58 * 58 * 116; 26 * 26 * 232; 13 * 13 * 1024
+            #---------------------------------------------------#
+            self.backbone   = ShufflenetV2(pretrained=pretrained)
+            
+            
+            in_filters      = [116, 232, 1024]  
         elif backbone == "vgg":
             #---------------------------------------------------#   
             #   52,52,256；26,26,512；13,13,512
